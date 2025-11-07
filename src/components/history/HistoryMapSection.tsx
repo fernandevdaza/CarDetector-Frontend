@@ -4,7 +4,6 @@ import {
     MapContainer,
     TileLayer,
     Marker,
-    Popup,
     useMap,
 } from 'react-leaflet';
 import { type LatLngExpression, icon, Marker as MarkerL } from 'leaflet';
@@ -42,7 +41,9 @@ export default function HistoryMapSection() {
         -17.7833, -63.1821,
     ]);
     const [zoom, setZoom] = useState(12);
-    const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
+
+    // 👉 lista de autos en la ubicación seleccionada
+    const [selectedCars, setSelectedCars] = useState<HistoryPoint[]>([]);
 
     useEffect(() => {
         (async () => {
@@ -58,7 +59,18 @@ export default function HistoryMapSection() {
         })();
     }, []);
 
-    const selectedPoint = points.find((p) => p.id === selectedPointId) ?? null;
+    const handleMarkerClick = (p: HistoryPoint) => {
+        setCenter([p.lat, p.lng]);
+        setZoom(15);
+
+        // todos los autos con misma lat/lng
+        const sameLocationCars = points.filter(
+            (q) =>
+                Math.abs(q.lat - p.lat) < 1e-6 &&
+                Math.abs(q.lng - p.lng) < 1e-6,
+        );
+        setSelectedCars(sameLocationCars);
+    };
 
     return (
         <SectionCard
@@ -83,47 +95,35 @@ export default function HistoryMapSection() {
                             key={p.id}
                             position={[p.lat, p.lng]}
                             eventHandlers={{
-                                click: () => {
-                                    setCenter([p.lat, p.lng]);
-                                    setZoom(15);
-                                    setSelectedPointId(p.id);
-                                },
+                                click: () => handleMarkerClick(p),
                             }}
-                        >
-                            <Popup>
-                                <div className="rounded-2xl bg-slate-900 border border-slate-700 shadow-lg shadow-slate-900/70 overflow-hidden w-56">
-                                    <div className="w-full h-28 bg-slate-950 overflow-hidden">
-                                        <img
-                                            src={p.imageUrl}
-                                            alt={`${p.brand} ${p.model}`}
-                                            className="h-full w-full object-cover"
-                                        />
-                                    </div>
-                                    <div className="p-3 space-y-1">
-                                        <p className="text-xs font-semibold text-slate-100">
-                                            {p.brand} {p.model}
-                                        </p>
-                                        <p className="text-[11px] text-slate-400">
-                                            Año aprox: {p.yearApprox}
-                                        </p>
-                                        <p className="text-[11px] text-slate-500">
-                                            Lat: {p.lat.toFixed(4)} · Lng: {p.lng.toFixed(4)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Popup>
-                        </Marker>
+                        />
                     ))}
                 </MapContainer>
             </div>
 
-            {selectedPoint && (
-                <div className="mt-3 text-xs text-slate-400">
-                    Punto seleccionado:{' '}
-                    <span className="font-medium text-slate-100">
-                        {selectedPoint.brand} {selectedPoint.model}
-                    </span>{' '}
-                    · Año aprox: {selectedPoint.yearApprox}
+            {/* Panel de lista debajo del mapa */}
+            {selectedCars.length > 0 && (
+                <div className="mt-4 max-h-40 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
+                    <p className="text-xs text-slate-400 mb-2">
+                        Vehículos en esta ubicación ({selectedCars.length})
+                    </p>
+                    <ul className="space-y-1 text-sm">
+                        {selectedCars.map((car) => (
+                            <li
+                                key={car.id}
+                                className="truncate text-slate-100"
+                            >
+                                {car.brand} {car.model} {car.yearApprox}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
+            {selectedCars.length === 0 && (
+                <div className="mt-3 text-xs text-slate-500">
+                    Haz clic en un punto del mapa para ver los autos detectados en esa ubicación.
                 </div>
             )}
         </SectionCard>

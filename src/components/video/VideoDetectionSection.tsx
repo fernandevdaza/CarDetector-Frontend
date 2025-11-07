@@ -47,9 +47,12 @@ export default function VideoDetectionSection() {
 
     const handlePredictCrop = async () => {
         if (!selectedCropId) return;
+        const crop = crops.find((c) => c.id === selectedCropId);
+        if (!crop) return;
+
         setLoadingCrop(true);
         try {
-            const data = await detectCarFromCrop(selectedCropId);
+            const data = await detectCarFromCrop(crop);
             setResult({
                 brand: data.brand,
                 model: data.model,
@@ -61,6 +64,7 @@ export default function VideoDetectionSection() {
             setLoadingCrop(false);
         }
     };
+
 
     return (
         <SectionCard
@@ -101,16 +105,21 @@ export default function VideoDetectionSection() {
                                                 : 'border-slate-800 bg-slate-900 hover:border-slate-600')
                                         }
                                     >
-                                        <div className="h-12 w-16 overflow-hidden rounded-lg bg-slate-950 border border-slate-800">
-                                            <img
-                                                src={crop.imageUrl}
-                                                alt={crop.label}
-                                                className="h-full w-full object-cover"
-                                            />
+                                        <div className="h-12 w-16 overflow-hidden rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center">
+                                            {crop.imageUrl ? (
+                                                <img
+                                                    src={crop.imageUrl}
+                                                    alt={crop.label}
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-[10px] text-slate-600 px-1 text-center">
+                                                    Sin imagen
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-xs font-medium text-slate-100">
-                                                {crop.label}
                                             </span>
                                             <span className="text-[11px] text-slate-500">
                                                 ID: {crop.id}
@@ -135,10 +144,10 @@ export default function VideoDetectionSection() {
                             {hasCropSelected ? (
                                 (() => {
                                     const crop = crops.find((c) => c.id === selectedCropId);
-                                    if (!crop) {
+                                    if (!crop || !crop.imageUrl) {
                                         return (
                                             <span className="text-xs md:text-sm text-slate-500">
-                                                Crop seleccionado no encontrado
+                                                Crop seleccionado sin imagen
                                             </span>
                                         );
                                     }
@@ -149,6 +158,7 @@ export default function VideoDetectionSection() {
                                             className="h-full w-full object-cover"
                                         />
                                     );
+
                                 })()
                             ) : videoPreviewUrl ? (
                                 <video

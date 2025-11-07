@@ -1,5 +1,6 @@
+// src/api/carDetectionApi.ts
 export interface ImageDetectionResult {
-    imageUrl: string;
+    imageUrl: string;          // para el preview local
     brand: string;
     model: string;
     yearApprox: string;
@@ -7,12 +8,15 @@ export interface ImageDetectionResult {
 
 export interface VideoCrop {
     id: string;
-    imageUrl: string;
+    imageUrl: string | undefined;
     label: string;
+    videoLat?: number | null;
+    videoLon?: number | null;
+    sourceVideoId?: string | null;
 }
 
 export interface VideoUploadResult {
-    videoUrl: string;
+    videoUrl: string;          // object URL para preview del video
     crops: VideoCrop[];
 }
 
@@ -32,93 +36,184 @@ export interface HistoryPoint {
     yearApprox: string;
 }
 
-// MOCKS – aquí enchufas tu backend real
+// 👉 cambia esto según tu entorno:
+const BASE_URL = 'http://localhost:8000';
+
+/* Util: convertir data URL base64 -> File para enviar a /car-with-image */
+async function dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    return new File([blob], filename, { type: blob.type || 'image/jpeg' });
+}
+
+/**
+ * Detección a partir de imagen subida por el usuario
+ * POST /inference/car-with-image
+ */
 export async function detectCarFromImage(
     file: File,
 ): Promise<ImageDetectionResult> {
-    return new Promise((resolve) =>
-        setTimeout(
-            () =>
-                resolve({
-                    imageUrl: URL.createObjectURL(file),
-                    brand: 'Toyota',
-                    model: 'Corolla',
-                    yearApprox: '2015–2018',
-                }),
-            800,
-        ),
-    );
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${BASE_URL}/inference/car-with-image`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!res.ok) {
+        throw new Error(`Error detectCarFromImage: ${res.status}`);
+    }
+
+    const json = await res.json();
+    const msg = json.message || {};
+
+    return {
+        imageUrl: URL.createObjectURL(file),
+        brand: msg.brand ?? '',
+        // backend usa model_name
+        model: msg.model_name ?? '',
+        yearApprox:
+            (msg.year != null ? String(msg.year) : json.metadata?.yearApprox) ?? '',
+    };
 }
 
+/**
+ * Subir video y obtener crops en base64
+ * POST /inference/car-with-video
+ */
 export async function uploadVideoAndGetCrops(
     file: File,
 ): Promise<VideoUploadResult> {
-    return new Promise((resolve) =>
-        setTimeout(
-            () =>
-                resolve({
-                    videoUrl: URL.createObjectURL(file),
-                    crops: [
-                        {
-                            id: 'crop-1',
-                            imageUrl: 'data:image/jpeg;base64,AAA...',
-                            label: 'Crop 1',
-                        },
-                        {
-                            id: 'crop-2',
-                            imageUrl: 'data:image/jpeg;base64,BBB...',
-                            label: 'Crop 2',
-                        },
-                    ],
-                }),
-            800,
-        ),
-    );
+    const formData = new FormData();
+    formData.append('file', file);
+
+    // puedes ajustar los query params si quieres otros valores
+    const url = new URL(`${BASE_URL}/inference/car-with-video`);
+    url.searchParams.set('frame_stride', '5');
+    url.searchParams.set('conf', '0.90');
+    // url.searchParams.set('iou', '0.45');
+    // url.searchParams.set('max_crops', '50');
+    // url.searchParams.set('min_crop_side', '48');
+    // url.searchParams.set('thumb_width', '256');
+    // url.searchParams.append('vehicle_types', 'car');
+    // url.searchParams.append('vehicle_types', 'truck');
+
+    const res = await fetch(url.toString(), {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!res.ok) {
+        throw new Error(`Error uploadVideoAndGetCrops: ${res.status}`);
+    }
+
+    const json = await res.json();
+
+    const meta = json.metadata ?? {};
+    const videoLat: number | null =
+        meta.lat != null ? Number(meta.lat) : null;
+    const videoLon: number | null =
+        meta.lon != null ? Number(meta.lon) : null;
+    const sourceVideoId: string | null =
+        meta.source_video_id ?? meta.video_id ?? null;
+
+    // Ajusta aquí según tu DetectResponse real
+    const cropsRaw: any[] = json.crops ?? [];
+
+    const crops: VideoCrop[] = cropsRaw.map((c, idx) => ({
+        id: String(c.id ?? c.crop_id ?? idx),
+        // 👇 OJO: aquí usamos thumb_b64 del backend
+        imageUrl: c.thumb_b64,
+        label: c.label ?? `Crop ${idx + 1}`,
+        videoLat,
+        videoLon,
+        sourceVideoId,
+    }));
+
+
+    return {
+        videoUrl: URL.createObjectURL(file),
+        crops,
+    };
 }
 
+/**
+ * Detectar auto a partir de un crop (base64) de un video
+ * Vuelve a usar /inference/car-with-image, pero enviando el crop
+ * y heredando lat/lon + source_video_id.
+ */
 export async function detectCarFromCrop(
-    cropId: string,
+    crop: VideoCrop,
 ): Promise<CropDetectionResult> {
-    console.log('Detect from crop', cropId);
+    if (!crop.imageUrl) {
+        throw new Error('Crop sin imagen');
+    }
 
-    return new Promise((resolve) =>
-        setTimeout(
-            () =>
-                resolve({
-                    brand: 'Honda',
-                    model: 'Civic',
-                    yearApprox: '2018–2020',
-                }),
-            800,
-        ),
-    );
+    const file = await dataUrlToFile(crop.imageUrl, `${crop.id}.jpg`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    if (crop.videoLat != null) {
+        formData.append('lat', String(crop.videoLat));
+    }
+    if (crop.videoLon != null) {
+        formData.append('lon', String(crop.videoLon));
+    }
+    if (crop.sourceVideoId) {
+        formData.append('source_video_id', crop.sourceVideoId);
+    }
+
+    const res = await fetch(`${BASE_URL}/inference/car-with-image`, {
+        method: 'POST',
+        body: formData,
+    });
+
+    if (!res.ok) {
+        throw new Error(`Error detectCarFromCrop: ${res.status}`);
+    }
+
+    const json = await res.json();
+    const msg = json.message || {};
+
+    return {
+        brand: msg.brand ?? '',
+        model: msg.model_name ?? '',
+        yearApprox:
+            (msg.year != null ? String(msg.year) : json.metadata?.yearApprox) ?? '',
+    };
 }
 
+/**
+ * Histórico para el mapa
+ * GET /car/get_cars
+ */
 export async function fetchHistoryPoints(): Promise<HistoryPoint[]> {
-    return new Promise((resolve) =>
-        setTimeout(
-            () =>
-                resolve([
-                    {
-                        id: 1,
-                        lat: -17.7833,
-                        lng: -63.1821,
-                        imageUrl: 'https://via.placeholder.com/160x90.png?text=Auto+1',
-                        brand: 'Ford',
-                        model: 'Focus',
-                        yearApprox: '2012–2015',
-                    },
-                    {
-                        id: 2,
-                        lat: -17.79,
-                        lng: -63.19,
-                        imageUrl: 'https://via.placeholder.com/160x90.png?text=Auto+2',
-                        brand: 'Toyota',
-                        model: 'Yaris',
-                        yearApprox: '2016–2019',
-                    },
-                ]),
-            600,
-        ),
-    );
+    const res = await fetch(`${BASE_URL}/car/get_cars`);
+    if (!res.ok) {
+        throw new Error(`Error fetchHistoryPoints: ${res.status}`);
+    }
+
+    const rows: any[] = await res.json();
+
+    const points: HistoryPoint[] = rows
+        .filter(
+            (r) =>
+                r.lat != null &&
+                r.lng != null,
+        )
+        .map((r) => ({
+            id: r.id,
+            lat: Number(r.lat),
+            lng: Number(r.lng),
+            brand: r.brand,
+            model: r.model_name,
+            yearApprox: r.year != null ? String(r.year) : '',
+            // si luego guardas URL de imagen en la BD, la usas aquí;
+            // por ahora placeholder:
+            imageUrl: 'https://via.placeholder.com/160x90.png?text=Auto',
+        }));
+
+    return points;
 }

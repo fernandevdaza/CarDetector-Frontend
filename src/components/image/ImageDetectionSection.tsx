@@ -47,7 +47,7 @@ export default function ImageDetectionSection() {
                 <div className="flex items-center">
                     <UploadBox
                         label="Subir foto del auto"
-                        accept="image/*"
+                        accept="image/*,.heic,.heif"
                         onFileSelected={handleFileSelected}
                     />
                 </div>
