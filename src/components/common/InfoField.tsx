@@ -1,4 +1,14 @@
-export default function InfoField({ label, value, disabled }: { label: string, value: string, disabled: boolean }) {
+interface InfoFieldProps {
+    label: string;
+    value?: string | null;
+    disabled?: boolean;
+}
+
+export default function InfoField({
+    label,
+    value,
+    disabled,
+}: InfoFieldProps) {
     return (
         <div className="flex flex-col gap-1">
             <span className="text-xs uppercase tracking-wide text-slate-400">

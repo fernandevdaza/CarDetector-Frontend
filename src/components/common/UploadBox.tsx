@@ -1,6 +1,15 @@
+interface UploadBoxProps {
+    label: string;
+    accept: string;
+    onFileSelected: (file: File) => void;
+}
 
-export default function UploadBox({ label, accept, onFileSelected }: { label: string, accept: string, onFileSelected: Function }) {
-    const handleChange = (e: any) => {
+export default function UploadBox({
+    label,
+    accept,
+    onFileSelected,
+}: UploadBoxProps) {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) onFileSelected(file);
     };
@@ -12,9 +21,7 @@ export default function UploadBox({ label, accept, onFileSelected }: { label: st
                     <span className="text-2xl">⬆️</span>
                 </div>
                 <div className="text-center">
-                    <p className="text-sm font-medium text-slate-100">
-                        {label}
-                    </p>
+                    <p className="text-sm font-medium text-slate-100">{label}</p>
                     <p className="text-xs text-slate-400 mt-1">
                         Haz clic para elegir un archivo
                     </p>

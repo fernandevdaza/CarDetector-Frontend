@@ -4,21 +4,27 @@ import UploadBox from '../common/UploadBox';
 import InfoField from '../common/InfoField';
 import { detectCarFromImage } from '../../api/carDetectionApi';
 
+interface DetectionState {
+    brand: string;
+    model: string;
+    yearApprox: string;
+}
+
 export default function ImageDetectionSection() {
-    const [previewUrl, setPreviewUrl] = useState("");
-    const [result, setResult] = useState({}) as any;
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [result, setResult] = useState<DetectionState | null>(null);
     const [loading, setLoading] = useState(false);
 
     const hasImage = Boolean(previewUrl);
 
-    const handleFileSelected = async (file: Blob) => {
+    const handleFileSelected = async (file: File) => {
         const localUrl = URL.createObjectURL(file);
         setPreviewUrl(localUrl);
-        setResult({});
+        setResult(null);
         setLoading(true);
 
         try {
-            const data = await detectCarFromImage(file) as any;
+            const data = await detectCarFromImage(file);
             setResult({
                 brand: data.brand,
                 model: data.model,
@@ -26,7 +32,6 @@ export default function ImageDetectionSection() {
             });
         } catch (err) {
             console.error(err);
-            // aquí podrías setear un estado de error
         } finally {
             setLoading(false);
         }
@@ -38,7 +43,16 @@ export default function ImageDetectionSection() {
             subtitle="Sube una foto y el modelo intentará identificar la marca, modelo y año."
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Izquierda: preview + datos */}
+                {/* IZQUIERDA: upload */}
+                <div className="flex items-center">
+                    <UploadBox
+                        label="Subir foto del auto"
+                        accept="image/*"
+                        onFileSelected={handleFileSelected}
+                    />
+                </div>
+
+                {/* DERECHA: preview + datos */}
                 <div
                     className={
                         'flex flex-col gap-4 rounded-2xl border p-3 md:p-4 ' +
@@ -61,20 +75,20 @@ export default function ImageDetectionSection() {
                         )}
                     </div>
 
-                    <div className={hasImage ? 'space-y-3' : 'space-y-3'}>
+                    <div className="space-y-3">
                         <InfoField
                             label="Marca"
-                            value={result?.brand}
+                            value={result?.brand ?? null}
                             disabled={!hasImage || loading}
                         />
                         <InfoField
                             label="Modelo"
-                            value={result?.model}
+                            value={result?.model ?? null}
                             disabled={!hasImage || loading}
                         />
                         <InfoField
                             label="Año aproximado"
-                            value={result?.yearApprox}
+                            value={result?.yearApprox ?? null}
                             disabled={!hasImage || loading}
                         />
 
@@ -84,15 +98,6 @@ export default function ImageDetectionSection() {
                             </p>
                         )}
                     </div>
-                </div>
-
-                {/* Derecha: upload */}
-                <div className="flex items-center">
-                    <UploadBox
-                        label="Subir foto del auto"
-                        accept="image/*"
-                        onFileSelected={handleFileSelected}
-                    />
                 </div>
             </div>
         </SectionCard>

@@ -1,23 +1,32 @@
 import { useEffect, useState } from 'react';
 import SectionCard from '../common/SectionCard';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import { icon, LatLng, Marker as LeafletMarker } from 'leaflet';
-import { fetchHistoryPoints } from '../../api/carDetectionApi';
+import {
+    MapContainer,
+    TileLayer,
+    Marker,
+    Popup,
+    useMap,
+} from 'react-leaflet';
+import { type LatLngExpression, icon, Marker as MarkerL } from 'leaflet';
+import { fetchHistoryPoints, type HistoryPoint } from '../../api/carDetectionApi';
 
-// Fix icon de Leaflet en bundlers tipo Vite
+// Icono default
 const defaultIcon = icon({
-    iconUrl:
-        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconRetinaUrl:
         'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    shadowUrl:
-        'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
     iconSize: [25, 41],
     iconAnchor: [12, 41],
 });
-LeafletMarker.prototype.options.icon = defaultIcon;
+(MarkerL as any).prototype.options.icon = defaultIcon;
 
-function FlyToOnClick({ position, zoom }: any) {
+interface FlyToOnClickProps {
+    position: LatLngExpression;
+    zoom: number;
+}
+
+function FlyToOnClick({ position, zoom }: FlyToOnClickProps) {
     const map = useMap();
     useEffect(() => {
         if (position) {
@@ -28,15 +37,17 @@ function FlyToOnClick({ position, zoom }: any) {
 }
 
 export default function HistoryMapSection() {
-    const [points, setPoints] = useState([]);
-    const [center, setCenter] = useState([-17.7833, -63.1821]); // p.ej Santa Cruz
+    const [points, setPoints] = useState<HistoryPoint[]>([]);
+    const [center, setCenter] = useState<LatLngExpression>([
+        -17.7833, -63.1821,
+    ]);
     const [zoom, setZoom] = useState(12);
-    const [selectedPointId, setSelectedPointId] = useState(null);
+    const [selectedPointId, setSelectedPointId] = useState<number | null>(null);
 
     useEffect(() => {
         (async () => {
             try {
-                const data = await fetchHistoryPoints() as any;
+                const data = await fetchHistoryPoints();
                 setPoints(data);
                 if (data.length > 0) {
                     setCenter([data[0].lat, data[0].lng]);
@@ -47,7 +58,7 @@ export default function HistoryMapSection() {
         })();
     }, []);
 
-    const selectedPoint = points.find((p: any) => p.id === selectedPointId) as any;
+    const selectedPoint = points.find((p) => p.id === selectedPointId) ?? null;
 
     return (
         <SectionCard
@@ -56,10 +67,10 @@ export default function HistoryMapSection() {
         >
             <div className="h-[380px] rounded-2xl border border-slate-800 overflow-hidden bg-slate-950">
                 <MapContainer
-                    center={new LatLng(center[0], center[1])}
+                    center={center}
                     zoom={zoom}
                     className="h-full w-full"
-                    scrollWheelZoom={true}
+                    scrollWheelZoom
                 >
                     <TileLayer
                         attribution="&copy; OpenStreetMap"
@@ -67,7 +78,7 @@ export default function HistoryMapSection() {
                     />
                     <FlyToOnClick position={center} zoom={zoom} />
 
-                    {points.map((p: any) => (
+                    {points.map((p) => (
                         <Marker
                             key={p.id}
                             position={[p.lat, p.lng]}
@@ -80,7 +91,6 @@ export default function HistoryMapSection() {
                             }}
                         >
                             <Popup>
-                                {/* Globito tipo cómic */}
                                 <div className="rounded-2xl bg-slate-900 border border-slate-700 shadow-lg shadow-slate-900/70 overflow-hidden w-56">
                                     <div className="w-full h-28 bg-slate-950 overflow-hidden">
                                         <img
