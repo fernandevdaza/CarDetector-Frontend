@@ -1,73 +1,66 @@
-# React + TypeScript + Vite
+# Car Detector Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este es el frontend para la aplicación de detección de vehículos. Está construido con React, TypeScript y Vite, utilizando TailwindCSS para los estilos y Leaflet para los mapas.
 
-Currently, two official plugins are available:
+## 📋 Requisitos Previos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Asegúrate de tener instalado lo siguiente antes de comenzar:
 
-## React Compiler
+- **Node.js** (versión 18 o superior recomendada)
+- **npm** (generalmente incluido con Node.js)
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## 🚀 Instalación y Puesta en Marcha
 
-## Expanding the ESLint configuration
+Sigue estos pasos para instalar y ejecutar el proyecto localmente:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1.  **Instalar dependencias:**
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+    Dento del directorio del proyecto, ejecuta:
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+    ```bash
+    npm install
+    ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+2.  **Iniciar el servidor de desarrollo:**
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+    Para comenzar a trabajar en el proyecto, usa el siguiente comando:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+    ```bash
+    npm run dev
+    ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+    Esto iniciará el servidor local, generalmente en `http://localhost:5173` (la terminal te mostrará la URL exacta).
+   
+    IMPORTANTE!
+    Cambia el BASE_URL en el archivo src/api/carDetectionApi.ts para que apunte a tu backend. Pon la ip del server y el puerto 80.
+    Ejemplo: const BASE_URL = 'http://1.2.3.4:80';
+
+    Si encuentras errores de lint, puedes corregirlos ejecutando:
+
+    ```bash
+    npm run lint
+    ```
+
+    Esto corregirá los errores de lint y los mostrará en la terminal.
+## 🛠️ Scripts Disponibles
+
+En el `package.json` encontrarás los siguientes scripts útiles:
+
+-   `npm run dev`: Inicia el servidor de desarrollo con recarga rápida (HMR).
+-   `npm run build`: Compila el proyecto para producción en la carpeta `dist`.
+-   `npm run preview`: Sirve localmente la versión de producción construida para probarla.
+-   `npm run lint`: Ejecuta ESLint para buscar y reportar problemas en el código.
+
+## 📦 Tecnologías Principales
+
+-   [React](https://react.dev/)
+-   [TypeScript](https://www.typescriptlang.org/)
+-   [Vite](https://vitejs.dev/)
+-   [TailwindCSS](https://tailwindcss.com/)
+-   [Leaflet](https://leafletjs.com/) & [React Leaflet](https://react-leaflet.js.org/)
+
+## 📝 Configuración Adicional
+
+### ESLint
+
+El proyecto incluye una configuración básica de ESLint. Si necesitas reglas más estrictas para producción, puedes consultar la documentación original de la plantilla de Vite o expandir el archivo `eslint.config.js`.
