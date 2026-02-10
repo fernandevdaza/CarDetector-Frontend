@@ -37,7 +37,7 @@ export interface HistoryPoint {
 }
 
 // 👉 cambia esto según tu entorno:
-const BASE_URL = 'http://localhost:8000';
+const BASE_URL = 'http://1.2.3.4:80';
 
 /* Util: convertir data URL base64 -> File para enviar a /car-with-image */
 async function dataUrlToFile(dataUrl: string, filename: string): Promise<File> {
