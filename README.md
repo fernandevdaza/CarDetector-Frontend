@@ -1,6 +1,6 @@
 # Car Detector Frontend
 
-Este es el frontend para la aplicación de detección de vehículos. Está construido con React, TypeScript y Vite, utilizando TailwindCSS para los estilos y Leaflet para los mapas.
+Frontend para el proyecto CarDetector. Está construido con React, TypeScript y Vite, utilizando TailwindCSS para los estilos y Leaflet para los mapas.
 
 ## 📋 Requisitos Previos
 
@@ -31,10 +31,6 @@ Sigue estos pasos para instalar y ejecutar el proyecto localmente:
 
     Esto iniciará el servidor local, generalmente en `http://localhost:5173` (la terminal te mostrará la URL exacta).
    
-    IMPORTANTE!
-    Cambia el BASE_URL en el archivo src/api/carDetectionApi.ts para que apunte a tu backend. Pon la ip del server y el puerto 80.
-    Ejemplo: const BASE_URL = 'http://1.2.3.4:80';
-
     Si encuentras errores de lint, puedes corregirlos ejecutando:
 
     ```bash
